@@ -1,0 +1,11 @@
+cloud:
+  aws:
+    credentials:
+      profile-name: ouija
+    region:
+      static: us-west-2
+
+logging:
+  level:
+    com.lucjross: debug
+    software.amazon.awssdk.services.transcribestreaming: debug

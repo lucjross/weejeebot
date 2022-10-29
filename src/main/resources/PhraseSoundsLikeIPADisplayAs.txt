@@ -1,0 +1,3 @@
+Phrase	SoundsLike	IPA	DisplayAs
+Ouija	wee-jee		Ouija
+Kadie	kay-dee		Kadie

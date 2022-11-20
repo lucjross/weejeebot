@@ -253,9 +253,14 @@ class OuijaState(
 
         if (answerSent.isBefore(clock.instant().minusSeconds(5))) {
 
-            val strWithoutPrompt = heyOuijaMatch?.let { transcribed.removePrefix(it.value) } ?: transcribed;
+            var strWithoutPrompt = heyOuijaMatch?.let { transcribed.removePrefix(it.value) } ?: transcribed;
 
-            if (strWithoutPrompt.endsWith("?") && heardHeyOuija.isAfter(clock.instant().minusSeconds(10))) {
+            if (strWithoutPrompt.endsWith("?") && heardHeyOuija.isAfter(clock.instant().minusSeconds(15))) {
+
+                val previousPuncIdx = strWithoutPrompt.removeSuffix("?").lastIndexOfAny(charArrayOf('.', '!', '?')) + 1
+                if (previousPuncIdx > 0) {
+                    strWithoutPrompt = strWithoutPrompt.substring(previousPuncIdx).trim()
+                }
 
                 // debounce by removing previous entries (shorter or same questions) from the scheduled tasks
                 var removed: String?
@@ -271,7 +276,7 @@ class OuijaState(
                         // so empty the queue upon sending an answer
                         debouncedAnswers.clear()
 
-                        val answerTypes = QuestionTypeNode.match(transcribed)
+                        val answerTypes = QuestionTypeNode.match(strWithoutPrompt)
                         val answer = answerTypes.random().answer.invoke()
                         if (answer == null) {
                             botClient.sendTryAgain()

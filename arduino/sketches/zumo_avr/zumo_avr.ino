@@ -16,7 +16,6 @@
 #define PLANCH_CENTER_TO_SCREEN_cm 5
 
 // board constants
-#define BOARD_ORI_deg 348
 #define BOARD_W_cm 85.1
 #define BOARD_H_cm 57.15
 #define BOARD_AREA_cm BOARD_W_cm * BOARD_H_cm
@@ -90,6 +89,8 @@ ZumoMotors motors;
 //#define COMPASS_DEVIATION_THRESHOLD 5
 #define HEADING_DEVIATION_THRESHOLD 2.0
 #define LAX_HEADING_DEVIATION_THRESHOLD 5.0
+
+uint16_t x_heading;
 
 ZumoIMU imu;
 ZumoIMU::vector<int16_t> m_max, m_min;
@@ -172,18 +173,19 @@ bool ussPingTimers(void *) {
 
 // Converts x and y components of a vector to a heading in degrees.
 // This calculation assumes that the Zumo is always level.
-template <typename T> float headingOf(ZumoIMU::vector<T> v)
+template <typename T> uint16_t headingOf(ZumoIMU::vector<T> v)
 {
   float x_scaled =  2.0 * (float)(v.x - m_min.x) / (m_max.x - m_min.x) - 1.0;
   float y_scaled =  2.0 * (float)(v.y - m_min.y) / (m_max.y - m_min.y) - 1.0;
 
-  float angle = atan2(y_scaled, x_scaled) * RAD2DEG;
+  uint16_t angle = atan2(y_scaled, x_scaled) * RAD2DEG;
   if (angle < 0)
     angle += 360;
+
   return angle;
 }
 
-float averageHeading() {
+uint16_t averageHeading() {
   ZumoIMU::vector<int32_t> avg = {0, 0, 0};
 
   for(int i = 0; i < 10; i ++)
@@ -203,7 +205,7 @@ bool findOrientation(void *) {
   // North is x-axis
   float heading_inv = 360 - averageHeading();
   // Adjust for board orientation
-  float new_theta = heading_inv + (360 - BOARD_ORI_deg);
+  float new_theta = heading_inv + x_heading;
   if (new_theta > 360)
     new_theta -= 360;
   
@@ -693,7 +695,12 @@ void setup() {
   m_min.x = running_min.x;
   m_min.y = running_min.y;
 
-  Serial.println("starting timers");
+  Serial.println(F("Orient planchette, waiting 5s"));
+  delay(5000);
+  x_heading = averageHeading();
+  Serial.print(F("x_heading=")); Serial.println(x_heading);
+
+  Serial.println(F("starting timers"));
   
   // start USS pings
   timer.every(USS_PING_INTERVAL, ussPingTimers);

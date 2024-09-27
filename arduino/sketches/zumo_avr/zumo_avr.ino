@@ -324,9 +324,9 @@ struct GoStraightIntermMove: intermMove {
   }
   
   void start() override {
-    Serial.print(F("[d] gostraight start ")); Serial.print(this->dist);
-    Serial.print(' '); Serial.println(this->direction);
-    timer.in((uint16_t) (this->dist / MOVE_cm_PER_s * 1000), nextMove);
+    Serial.print(F("[d] gostraight start: dist=")); Serial.print(this->dist);
+    Serial.print(', dir='); Serial.println(this->direction);
+    timer.in((uint16_t) (this->dist / MOVE_cm_PER_s * 1000.0), nextMove);
   }
   void handle() override {
     goStraight(this->direction);
@@ -425,6 +425,7 @@ void goStraight(int16_t direction) {
 
 bool nextMove(void *) {
   motors.setSpeeds(0, 0);
+  findOrientation(nullptr);
   global.move_queue.dequeue();
   intermMove **m = global.move_queue.getHeadPtr();
   
@@ -449,14 +450,14 @@ bool calcMoves() {
   }
   
   point *dst = global.poi_queue.getHeadPtr();
-  if (dst->y == global.pos.y && dst->x == global.pos.x) {
-    // wiggle around
-    moves_prealloc.turn1.heading = 10;
-    global.move_queue.enqueue(&(moves_prealloc.turn1));
-
-    moves_prealloc.turn2.heading = 350;
-    global.move_queue.enqueue(&(moves_prealloc.turn2));
-  }
+//   if (dst->y == global.pos.y && dst->x == global.pos.x) {
+//     // wiggle around
+//     moves_prealloc.turn1.heading = 10;
+//     global.move_queue.enqueue(&(moves_prealloc.turn1));
+//
+//     moves_prealloc.turn2.heading = 350;
+//     global.move_queue.enqueue(&(moves_prealloc.turn2));
+//   }
 
   global.moving_from = {global.pos.x, global.pos.y};
   
@@ -490,12 +491,12 @@ bool calcMoves() {
   
   int16_t x_dir = from.x < to.x ? 1 : -1;
   float dist_x = abs(to.x - from.x);
-  if (abs(to.y - from.y) <= Y_POSITION_DEVIATION_THRESHOLD) {
-    moves_prealloc.goStraight1.dist = dist_x;
-    moves_prealloc.goStraight1.direction = x_dir;
-    global.move_queue.enqueue(&(moves_prealloc.goStraight1));
-    return true;
-  }
+//   if (abs(to.y - from.y) <= Y_POSITION_DEVIATION_THRESHOLD) {
+//     moves_prealloc.goStraight1.dist = dist_x;
+//     moves_prealloc.goStraight1.direction = x_dir;
+//     global.move_queue.enqueue(&(moves_prealloc.goStraight1));
+//     return true;
+//   }
 
   int16_t y_dir = from.y < to.y ? 1 : -1;
   float dist_y = abs(to.y - from.y);
@@ -576,20 +577,19 @@ void sendCheck() {
   nss.flush();
 }
 
-volatile char serial_read_stage[16];
-volatile uint8_t serial_bytes_staged;
-char poi_cmd[] = "$addPoi(";
-uint8_t poi_cmd_x_idx = 8;
+char serial_read_stage[16];
+uint8_t serial_bytes_staged;
+char poi_cmd[] = "$poi(";
+#define POI_CMD_X_IDX 5
 volatile bool reading = false;
 
 bool readNSS(void *) {
   if (reading) {
     return true;
   }
-  
+
+  reading = true;
   while (nss.available() > 0) {
-    reading = true;
-    
     uint8_t c = nss.read();
     Serial.print(F("[d] c=")); Serial.println((char) c);
     serial_read_stage[serial_bytes_staged++] = (char) c;
@@ -601,7 +601,7 @@ bool readNSS(void *) {
       serial_bytes_staged = 0;
       
       bool is_add_poi = true;
-      for (uint8_t i = 0; i < poi_cmd_x_idx; i++) {
+      for (uint8_t i = 0; i < POI_CMD_X_IDX; i++) {
         if (serial_read_stage[i] != poi_cmd[i]) {
           is_add_poi = false;
           break;

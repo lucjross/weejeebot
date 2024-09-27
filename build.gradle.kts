@@ -19,6 +19,7 @@ configurations {
 
 repositories {
     mavenCentral()
+    mavenLocal()
 }
 
 extra["springCloudVersion"] = "2021.0.4"
@@ -36,7 +37,9 @@ dependencies {
     implementation("io.awspring.cloud:spring-cloud-starter-aws")
     implementation("software.amazon.awssdk:transcribestreaming")
     implementation("io.github.microutils:kotlin-logging-jvm:3.0.0")
-    implementation("org.openpnp:opencv:4.5.5-1")
+    implementation("org.python:jython-slim:2.7.3")
+    implementation("com.google.cloud:gapic-google-cloud-ai-generativelanguage-v1beta3-java:0.0.0-SNAPSHOT")
+    implementation("io.grpc:grpc-okhttp:1.53.0")
 
     developmentOnly("org.springframework.boot:spring-boot-devtools")
 

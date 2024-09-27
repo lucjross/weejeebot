@@ -187,10 +187,11 @@ void handle_answer() {
   }
 }
 
-void sendAddPoi(const char* str) {
-  Serial1.write("$addPoi(");
-  Serial1.write(str);
+void sendAddPoi(const char* c) {
+  Serial1.write("$poi(");
+  Serial1.write(c);
   Serial1.write(')');
+  Serial1.
 }
 
 volatile char serial_read_stage[16];

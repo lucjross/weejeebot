@@ -1,5 +1,15 @@
 package com.lucjross.ouija
 
+import mu.KotlinLogging
+import org.springframework.stereotype.Component
+import org.springframework.util.ResourceUtils
+import java.io.FileReader
+import java.io.StringWriter
+import javax.annotation.PostConstruct
+import javax.script.ScriptEngine
+import javax.script.ScriptEngineManager
+import javax.script.SimpleScriptContext
+
 enum class AnswerType(val answer: () -> String?) {
     VERB_CONTINUOUS({ listOf(
         "running",

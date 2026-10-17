@@ -26,18 +26,14 @@ reference and draws almost nothing, which is why it can share that pin.
 
 | Pin | Function | Notes |
 |-----|----------|-------|
-| 7, 8, 9, 10 | Motor direction/PWM | Zumo shield, fixed |
-| 12 | User button | Zumo shield, fixed |
-| 13 | User LED | Zumo shield, fixed |
-| 3 | Buzzer | Zumo shield, if fitted |
-| A4, A5 | I2C | The shield's own link to the IMU; nothing else is on this bus |
 | A0 | Serial RX (NeoSWSerial, 9600 baud) | From the Nano's TX, via level converter |
 | A3 | Serial TX (NeoSWSerial, 9600 baud) | To the Nano's RX, via level converter |
 | 4 | HC-SR04 front TRIG | |
 | 11 | HC-SR04 right TRIG | |
 | 5 | HC-SR04 back TRIG | |
 | 2 | HC-SR04 left TRIG | |
-| A2 | HC-SR04 ECHO (shared line, see below) | |
+| A2 | HC-SR04 x-axis ECHO (front + back, shared line, see below) | |
+| A1 | HC-SR04 y-axis ECHO (left + right, shared line, see below) | |
 
 Pin numbers come from `sketches/zumo_avr/zumo_avr.ino`.
 
@@ -48,21 +44,21 @@ Pin numbers come from `sketches/zumo_avr/zumo_avr.ino`.
 | VCC | Uno `5V` |
 | GND | `GND` |
 | TRIG | The sensor's own pin from the table above |
-| ECHO | Its own diode (see below), then the shared line to A2 |
+| ECHO | Its own diode (see below), then its axis's shared line: A2 for front/back, A1 for left/right |
 
 They are 5 V devices like the Uno, so no level shifting is needed. Sensors face front, right, back and left of the bot,
 which in the board frame (see "Orientation") means the front sensor measures along x, and left/right measure along y.
 
-### Shared echo line (diode-OR)
+### Shared echo lines (diode-OR, one per axis)
 
-All four echoes share one Uno pin (A2). Only one sensor fires at a time, but the idle sensors would otherwise hold the line low
+Front and back share Uno pin A2 (x axis); left and right share A1 (y axis). Only one sensor fires at a time, but the idle sensor on a line would otherwise hold it low
 while the active one drives it high, so each echo goes through a diode:
 
 | Part | Wiring |
 |------|--------|
 | Diode on each ECHO | Anode (unmarked end) to the sensor's ECHO pin, cathode (striped end) to the shared line |
-| Pull-down resistor | From the shared line to `GND` (builder's existing resistor; about 10 kOhm is typical), so the line returns low between echoes |
-| Shared line | To Uno A2 |
+| Pull-down resistor (required, one per line) | From the shared line to `GND`, about 10 kOhm, on the Uno side of the diodes. Without it the line floats between echoes and the Uno reads it as permanently high, so every sensor on that line reports no echo |
+| Shared lines | Front/back to Uno A2; left/right to Uno A1 |
 
 The diode drops about 0.3-0.7 V, so a high echo reaches the Uno at roughly 4.3-4.7 V, still well above its ~3 V threshold.
 **VERIFY:** the diode orientation and the resistor value as built.
@@ -132,7 +128,7 @@ The display's center is about 5 cm from the bot's center in +y, so the bot targe
 
 **Planchette (detachable top):** the Nano 33 IoT and the GC9A01 display only, with the short display wiring staying on the planchette.
 
-**Uno + Zumo side:** everything else: the four HC-SR04 sensors, the diode-OR and pull-down, the level converter, and the Uno.
+**Uno + Zumo side:** everything else: the four HC-SR04 sensors, the two diode-ORs and pull-downs, the level converter, and the Uno.
 
 **Wires crossing between the Uno side and the planchette (4 total):**
 
@@ -154,7 +150,7 @@ the 7.45 V wire can't be plugged into the wrong pin.
 
 ## Open items
 
-- Confirm the diode orientation and pull-down value on the echo line.
+- Confirm the diode orientation and pull-down value on both echo lines.
 - Confirm the serial link works with the converter's LV pin on the Uno's 3.3 V pin.
 - Zumo boost regulator current rating (unknown).
 - Compass calibration on the floor with the battery pack on, then check the heading against a known direction.

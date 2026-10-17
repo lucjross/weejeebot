@@ -17,7 +17,7 @@
 
 // board constants
 #define BOARD_W_cm 85.1
-#define BOARD_H_cm 57.15
+#define BOARD_H_cm 56.83
 #define BOARD_AREA_cm BOARD_W_cm * BOARD_H_cm
 #define BOARD_LEFT_WALL_X -(BOARD_W_cm / 2)
 #define BOARD_RIGHT_WALL_X BOARD_W_cm / 2
@@ -34,7 +34,9 @@
 #define USS_B_TRIG_PIN 5
 #define USS_L_TRIG_PIN 2
 #define USS_R_TRIG_PIN 11
-#define USS_ECHO_PIN A2
+// front/back share the x-axis echo line, left/right share the y-axis echo line
+#define USS_X_ECHO_PIN A2
+#define USS_Y_ECHO_PIN A1
 #define USS_F 0
 #define USS_R 1
 #define USS_B 2
@@ -54,10 +56,10 @@ const int MAX_DURATION_uS = (int) (50 / SOUND_cm_PER_uS_HALVED);
 auto timer = timer_create_default();
 
 NewPing uss_newping[4] = {
-  NewPing(USS_F_TRIG_PIN, USS_ECHO_PIN, BOARD_W_cm),
-  NewPing(USS_R_TRIG_PIN, USS_ECHO_PIN, BOARD_W_cm),
-  NewPing(USS_B_TRIG_PIN, USS_ECHO_PIN, BOARD_W_cm),
-  NewPing(USS_L_TRIG_PIN, USS_ECHO_PIN, BOARD_W_cm)
+  NewPing(USS_F_TRIG_PIN, USS_X_ECHO_PIN, BOARD_W_cm),
+  NewPing(USS_R_TRIG_PIN, USS_Y_ECHO_PIN, BOARD_W_cm),
+  NewPing(USS_B_TRIG_PIN, USS_X_ECHO_PIN, BOARD_W_cm),
+  NewPing(USS_L_TRIG_PIN, USS_Y_ECHO_PIN, BOARD_W_cm)
 };
 
 // softwareserial

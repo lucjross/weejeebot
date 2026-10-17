@@ -1,0 +1,9 @@
+time,sensor,true_mm,mean_mm,std_mm,n,note
+2026-10-17T16:01:36,L,115.9,120.5,0.5,24,"tape, L face to top wall, corner 3"
+2026-10-17T16:01:42,R,304.8,301.8,1.3,24,"tape, R face to bottom wall, corner 3"
+2026-10-17T16:04:42,L,336.6,333.4,2.2,24,"tape, corner 4"
+2026-10-17T16:04:48,R,85.7,88.0,0.2,25,"tape, corner 4"
+2026-10-17T16:07:22,B,127.0,134.8,2.1,24,"tape, corner 5"
+2026-10-17T16:07:28,F,584.2,587.0,2.4,25,"tape, corner 5"
+2026-10-17T16:10:03,F,127.0,131.7,0.4,25,"tape, board right wall, corner 6"
+2026-10-17T16:10:09,B,584.2,581.1,1.8,24,"tape, board left wall, corner 6"

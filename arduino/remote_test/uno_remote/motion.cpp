@@ -12,6 +12,9 @@ bool running = false;
 Mode mode = M_NONE;
 int16_t cmdLeft = 0, cmdRight = 0;
 uint32_t endAt = 0;
+uint32_t startedAt = 0;
+uint16_t ramp = 0;
+int16_t appliedLeft = 0, appliedRight = 0;
 const char *reason = "";
 
 Mode modeOf(int left, int right) {
@@ -53,9 +56,10 @@ void begin() {
   motors.setSpeeds(0, 0);
 }
 
-const char *start(int left, int right, int durationMs) {
+const char *start(int left, int right, int durationMs, int rampMs) {
   if (abs(left) > MAX_SPEED || abs(right) > MAX_SPEED) return "range";
   if (durationMs < 1 || durationMs > MAX_DRIVE_MS) return "range";
+  if (rampMs < 0 || rampMs > durationMs) return "range";
   Mode m = modeOf(left, right);
   if (m == M_NONE) return "range";
   if (running) return "busy";
@@ -65,9 +69,13 @@ const char *start(int left, int right, int durationMs) {
   mode = m;
   cmdLeft = left;
   cmdRight = right;
-  endAt = millis() + durationMs;
+  startedAt = millis();
+  endAt = startedAt + durationMs;
+  ramp = rampMs;
   running = true;
-  motors.setSpeeds(left, right);
+  appliedLeft = ramp ? 0 : left;
+  appliedRight = ramp ? 0 : right;
+  motors.setSpeeds(appliedLeft, appliedRight);
   return nullptr;
 }
 
@@ -94,6 +102,20 @@ Event update() {
   if ((int32_t) (millis() - endAt) >= 0) {
     stop();
     return DONE;
+  }
+  uint32_t elapsed = millis() - startedAt;
+  if (ramp && elapsed < ramp) {
+    int16_t l = (int32_t) cmdLeft * (int32_t) elapsed / ramp;
+    int16_t r = (int32_t) cmdRight * (int32_t) elapsed / ramp;
+    if (l != appliedLeft || r != appliedRight) {
+      appliedLeft = l;
+      appliedRight = r;
+      motors.setSpeeds(l, r);
+    }
+  } else if (ramp && (appliedLeft != cmdLeft || appliedRight != cmdRight)) {
+    appliedLeft = cmdLeft;
+    appliedRight = cmdRight;
+    motors.setSpeeds(cmdLeft, cmdRight);
   }
   return NONE;
 }

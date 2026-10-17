@@ -8,8 +8,9 @@ enum Event : uint8_t { NONE, DONE, GUARD };
 
 void begin();
 
-// Starts a move. Returns nullptr on success, or a short error reason ("range", "busy", "stale", "guard FL", ...).
-const char *start(int left, int right, int durationMs);
+// Starts a move. rampMs > 0 raises the speed linearly from 0 to the target over that time (0 = jump straight to it).
+// Returns nullptr on success, or a short error reason ("range", "busy", "stale", "guard F", ...).
+const char *start(int left, int right, int durationMs, int rampMs);
 
 void stop();
 bool active();

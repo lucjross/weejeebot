@@ -79,19 +79,24 @@ void handleCommand(char *line) {
       reply(id, "OK");
     }
   } else if (strcmp(tok, "DRIVE") == 0) {
-    long l, r, ms;
+    long l, r, ms, ramp = 0;
     if (!parseInt(strtok(nullptr, " "), l) || !parseInt(strtok(nullptr, " "), r) ||
         !parseInt(strtok(nullptr, " "), ms)) {
       reply(id, "ERR args");
+      return;
+    }
+    char *rampTok = strtok(nullptr, " ");  // optional 4th argument: ramp time in ms
+    if (rampTok && !parseInt(rampTok, ramp)) {
+      reply(id, "ERR args");
+      return;
+    }
+    const char *err = Motion::start((int) l, (int) r, (int) ms, (int) ramp);
+    if (err) {
+      char msg[16];
+      snprintf(msg, sizeof msg, "ERR %s", err);
+      reply(id, msg);
     } else {
-      const char *err = Motion::start((int) l, (int) r, (int) ms);
-      if (err) {
-        char msg[16];
-        snprintf(msg, sizeof msg, "ERR %s", err);
-        reply(id, msg);
-      } else {
-        reply(id, "OK");
-      }
+      reply(id, "OK");
     }
   } else if (strcmp(tok, "GYROZERO") == 0) {
     if (Motion::active()) {

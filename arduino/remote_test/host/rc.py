@@ -5,7 +5,7 @@ Usage:  rc.py [--url http://<nano-ip>] <command> [args]      (or set ROBOT_URL)
 
   ping | status | state | stop | gyrozero
   tel <ms>                telemetry period on the Uno (0 = off)
-  drive <left> <right> <ms>
+  drive <left> <right> <ms> [ramp_ms]
   watch <seconds>         print telemetry for a while
   raw "<line>"            send a raw command line to the Uno
 
@@ -89,11 +89,15 @@ class Robot:
 
     # ---- HTTP ----
     def _get(self, path: str) -> str:
-        try:
-            with urllib.request.urlopen(self.url + path, timeout=self.timeout) as r:
-                return r.read().decode(errors="replace")
-        except (urllib.error.URLError, TimeoutError, OSError) as e:
-            raise RobotError(f"GET {path} failed: {e}") from e
+        # GETs only read, so a WiFi blip is retried; POSTs are never retried (a repeated DRIVE would move the bot twice)
+        for attempt in range(3):
+            try:
+                with urllib.request.urlopen(self.url + path, timeout=self.timeout) as r:
+                    return r.read().decode(errors="replace")
+            except (urllib.error.URLError, TimeoutError, OSError) as e:
+                if attempt == 2:
+                    raise RobotError(f"GET {path} failed: {e}") from e
+                time.sleep(0.3)
 
     def _post(self, path: str, form: dict) -> str:
         data = urllib.parse.urlencode(form).encode()
@@ -195,11 +199,11 @@ class Robot:
             except RobotError:
                 pass
 
-    def drive(self, left: int, right: int, ms: int) -> str:
-        """Run a timed move; returns the final event line ('E done' or 'E guard ...')."""
-        if abs(left) > MAX_SPEED or abs(right) > MAX_SPEED or not 1 <= ms <= MAX_DRIVE_MS:
+    def drive(self, left: int, right: int, ms: int, ramp_ms: int = 0) -> str:
+        """Run a timed move (speed rises linearly over ramp_ms if given); returns 'E done' or 'E guard ...'."""
+        if abs(left) > MAX_SPEED or abs(right) > MAX_SPEED or not 1 <= ms <= MAX_DRIVE_MS or not 0 <= ramp_ms <= ms:
             raise RobotError("drive arguments outside the safe limits")
-        reply = self.cmd(f"DRIVE {left} {right} {ms}")
+        reply = self.cmd(f"DRIVE {left} {right} {ms}" + (f" {ramp_ms}" if ramp_ms else ""))
         if not reply.ok:
             raise RobotError(f"DRIVE refused: {reply.text}")
         return self.wait_event(ms / 1000.0 + 1.5)

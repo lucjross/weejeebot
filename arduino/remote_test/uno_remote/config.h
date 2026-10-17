@@ -22,11 +22,12 @@
 #define SONAR_X_ECHO_PIN A2
 #define SONAR_Y_ECHO_PIN A1
 #define SONAR_MAX_CM 200
-// Per-sensor correction fitted against tape measurements (host/tests/t02_accuracy.py, host/data/accuracy.csv):
-// reading = gain * true + offset, so the firmware reports (reading - offset) / gain. Order: F R B L.
-// accuracy.csv holds raw readings (taken before this correction existed); two points per sensor.
-#define SONAR_GAIN {0.996f, 0.976f, 0.976f, 0.965f}
-#define SONAR_OFFSET_MM {5.2f, 4.4f, 10.8f, 8.7f}
+// Per-sensor correction, applied as (reading - offset) / gain. Order: F R B L.
+// Gains stay 1: tape-fitted gains made the pair sums less consistent across positions. The offsets come from the bot's
+// measured body: sensor faces are 140 mm apart front-to-back and 153 mm left-to-right, the board is 851 x 568.3 mm, so
+// F+B should read 711.0 mm and R+L 415.3 mm. Mid-range readings summed 3.7 mm (x) and 5.9 mm (y) long; split evenly.
+#define SONAR_GAIN {1.0f, 1.0f, 1.0f, 1.0f}
+#define SONAR_OFFSET_MM {1.9f, 3.0f, 1.9f, 3.0f}
 // pause between pings so one sensor's echo has died out before the next fires
 #define SONAR_PING_GAP_MS 40
 

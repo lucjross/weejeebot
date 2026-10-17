@@ -36,7 +36,7 @@ Commands (Nano -> Uno), each optionally prefixed with `#<id> ` so replies can be
 | `STOP` | motors off immediately | `#id OK` |
 | `STATE` | send one telemetry line now | `#id OK`, then a `T` line |
 | `TEL <ms>` | telemetry period, 0 = off, otherwise 200-5000 | `#id OK` |
-| `DRIVE <left> <right> <ms>` | run both tracks, speeds -200..200, duration 1..2000 ms | `#id OK`, later `E done` or `E guard <name>` |
+| `DRIVE <left> <right> <ms> [ramp_ms]` | run both tracks, speeds -200..200, duration 1..2000 ms; with `ramp_ms` (0..ms) the speed rises linearly from 0 over that time, otherwise it jumps straight to the target | `#id OK`, later `E done` or `E guard <name>` |
 | `GYROZERO` | measure gyro bias (~1 s, bot must be still), zero yaw | `#id OK bias=<x>` |
 
 Errors: `#id ERR <reason>` (`unknown`, `range`, `guard`, `busy`, `stale`, ...).

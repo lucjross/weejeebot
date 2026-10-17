@@ -15,6 +15,9 @@ lock = threading.Lock()
 lines = []          # (seq, text)
 next_seq = 1
 tel_period = 0.0
+x_mm = 0.0           # bot centre along the board's x axis, 0 = board centre, + toward the front wall
+BOARD_X = 851.0
+MM_PER_S_PER_UNIT = 0.5   # speed 100 -> 50 mm/s
 
 
 def push(text: str):
@@ -27,10 +30,14 @@ def push(text: str):
 
 def telemetry_line() -> str:
     ms = int(time.time() * 1000) % 100000000
-    return f"T {ms} 300 250 260 90 -20 -6150 -12930 390 -778 16905 -580 -701 -1230 0 0 0"
+    front = BOARD_X / 2 - x_mm - 70
+    back = BOARD_X / 2 + x_mm - 70
+    return f"T {ms} {front:.0f} 200 {back:.0f} 221 -20 -6150 -12930 390 -778 16905 -580 -701 -1230 0 0 0"
 
 
 def handle_command(text: str):
+    global tel_period, x_mm
+    global tel_period, x_mm
     parts = text.split()
     cid = ""
     if parts and parts[0].startswith("#"):
@@ -47,16 +54,21 @@ def handle_command(text: str):
         push(f"{cid}OK")
         push(telemetry_line())
     elif c == "TEL":
-        global tel_period
         ms = int(parts[1])
         tel_period = ms / 1000.0
         push(f"{cid}OK")
     elif c == "DRIVE":
         left, right, ms = int(parts[1]), int(parts[2]), int(parts[3])
-        if abs(left) > 200 or abs(right) > 200 or not 1 <= ms <= 2000:
+        ramp = int(parts[4]) if len(parts) > 4 else 0
+        if abs(left) > 200 or abs(right) > 200 or not 1 <= ms <= 2000 or not 0 <= ramp <= ms:
             push(f"{cid}ERR range")
+        elif left > 0 and right > 0 and BOARD_X / 2 - x_mm - 70 < 60:
+            push(f"{cid}ERR guard F")
+        elif left < 0 and right < 0 and BOARD_X / 2 + x_mm - 70 < 60:
+            push(f"{cid}ERR guard B")
         else:
             push(f"{cid}OK")
+            x_mm += (left + right) / 2 * MM_PER_S_PER_UNIT * (ms - ramp / 2) / 1000.0
             threading.Timer(ms / 1000.0, lambda: push("E done")).start()
     elif c == "GYROZERO":
         push(f"{cid}OK bias=-60")

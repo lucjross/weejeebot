@@ -4,3 +4,21 @@ ktor:
       - com.lucjross.ouija.ApplicationKt.module
   deployment:
     port: 8080
+
+ouija:
+  deepgram:
+    # supplied through the environment, never written here; see backend/.env.example
+    api-key: ${?DEEPGRAM_API_KEY}
+    model: nova-3
+    language: en-US
+    # silence that ends an utterance, in ms
+    endpointing-ms: 700
+    # biases recognition toward the wake word (Nova-3 keyterm prompting)
+    keyterms:
+      - Ouija
+      - Hey Ouija
+  bot:
+    # the Nano on the planchette; override with NANO_URL
+    base-url: ${?NANO_URL}
+    # estimated time the bot needs per spelled letter, until the Nano can report that it is done
+    seconds-per-letter: 6

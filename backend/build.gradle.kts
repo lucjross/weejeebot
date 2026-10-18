@@ -29,10 +29,15 @@ dependencies {
     // for calling the Nano on the planchette
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.cio)
+    implementation(libs.ktor.client.websockets)
+    implementation(libs.kotlinx.coroutines.core)
     implementation(libs.logback.classic)
+    implementation(libs.kotlin.logging)
 
     testImplementation(libs.ktor.server.test.host)
     testImplementation(libs.kotlin.test.junit5)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.ktor.client.mock)
 }
 
 tasks.test {

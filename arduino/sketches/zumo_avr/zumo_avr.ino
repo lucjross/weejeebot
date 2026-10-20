@@ -24,6 +24,8 @@ void setup() {
 
   linkBegin();
 
+  sonarBegin();
+
   Wire.begin();
 
   compassBegin();

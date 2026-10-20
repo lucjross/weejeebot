@@ -75,3 +75,36 @@ bool findPosition(void *) {
   
   return true;
 }
+
+bool axisPosition(bool y_axis, float &out, int8_t *sensor) {
+  // the last echo of each sensor is kept while a new ping is out; too close to be real (or a missing echo that read 0)
+  // does not count. Distances are to the sensor face; USS_DIST_ADJ_cm moves them to the bot's centre.
+  // echoCheck updates these in an interrupt, and an int16 is read in two steps
+  noInterrupts();
+  int16_t f_mm = global.uss_mm[USS_F], b_mm = global.uss_mm[USS_B];
+  interrupts();
+  float df = f_mm / 10.0, db = b_mm / 10.0;
+  bool f_ok = df >= USS_MIN_VALID_cm;
+  bool b_ok = db >= USS_MIN_VALID_cm;
+
+  int8_t use;
+  if (sensor != nullptr && *sensor >= 0) {
+    use = *sensor;
+  } else if (f_ok && (!b_ok || df < db)) {
+    use = USS_F;
+  } else if (b_ok) {
+    use = USS_B;
+  } else {
+    return false;
+  }
+  if (use == USS_F ? !f_ok : !b_ok) {
+    return false;
+  }
+  if (sensor != nullptr) {
+    *sensor = use;
+  }
+
+  float wall_f = y_axis ? BOARD_H_cm / 2 : BOARD_W_cm / 2;
+  out = use == USS_F ? wall_f - (df + USS_DIST_ADJ_cm) : -wall_f + (db + USS_DIST_ADJ_cm);
+  return true;
+}

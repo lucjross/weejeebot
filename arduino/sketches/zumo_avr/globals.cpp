@@ -10,6 +10,7 @@ static uint32_t tracks_off_since_ms = 0;
 
 void setTracks(int16_t left, int16_t right) {
   motors.setSpeeds(left, right);
+  global.turning = left != 0 && right != 0 && (left > 0) != (right > 0);
   if (left != 0 || right != 0) {
     tracks_on = true;
   } else if (tracks_on) {

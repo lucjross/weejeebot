@@ -6,16 +6,16 @@
 #include "types.h"
 
 struct Globals {
-  volatile uint8_t uss_curr = USS_F;
   volatile int8_t uss_distances[4];
   volatile int8_t uss_adj_distances[4];
+  // the same readings in mm with the offset applied but not rounded; 0 until the sensor has had a first echo
+  volatile int16_t uss_mm[4];
+  // true while the tracks turn the bot on the spot; no sonar is fired then, the readings are not squarely on the walls
+  volatile bool turning = false;
   volatile point pos = {COORD_UNDEF, COORD_UNDEF};
   volatile int16_t theta;
   // move queue for POI on the board i.e. letters
   volatile ArduinoQueue<point> poi_queue = ArduinoQueue<point>(64);
-  volatile point moving_to;
-  volatile point moving_from;
-  volatile ArduinoQueue<intermMove *> move_queue = ArduinoQueue<intermMove *>(6);
 };
 
 extern Globals global;

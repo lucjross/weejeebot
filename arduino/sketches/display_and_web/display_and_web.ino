@@ -25,6 +25,7 @@
 
 #define SERIAL1_BAUDRATE 9600
 #define POI_SPACING_MS 500        // gap between points sent to the Uno, so its serial buffer is never overrun
+#define POI_ACK_TIMEOUT_MS 60000UL  // send the next point anyway if the Uno has not reached the last one by then
 #define MAX_POINTS 24             // longest accepted answer
 #define BUSY_TIMEOUT_MS 240000UL  // give up waiting for the Uno after this long, so a lost message cannot wedge the bot
 #define HEY_OUIJA_SHOW_MS 10000
@@ -251,9 +252,12 @@ void pumpUno() {
   }
 }
 
-// sends the next queued point once the spacing has passed
+// Sends the next queued point once the spacing has passed and the Uno has reached the previous one. The Uno's software
+// serial cannot receive while it is sending ($arrived), so points sent ahead of it could collide with its replies and
+// lose a letter. If a reply never comes, the next point goes anyway after POI_ACK_TIMEOUT_MS.
 void pumpPoints() {
   if (queueCount == 0 || (int32_t) (millis() - nextPointAt) < 0) return;
+  if (pointsSent > pointsArrived && (int32_t) (millis() - (nextPointAt + POI_ACK_TIMEOUT_MS)) < 0) return;
   sendPoi(pointQueue[queueHead]);
   queueHead = (queueHead + 1) % MAX_POINTS;
   queueCount--;

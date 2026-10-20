@@ -30,28 +30,10 @@ data class DeepgramChannel(val alternatives: List<DeepgramAlternative> = emptyLi
 data class DeepgramAlternative(val transcript: String = "")
 
 /**
- * Joins Deepgram's final results into whole utterances. Interim results are not requested, so every result with
- * `is_final` is settled text; a long utterance can arrive as several of them, and `speech_final` marks the pause that
- * ends it.
+ * Streams microphone audio to Deepgram over one WebSocket session and reports each final piece of text as soon as it
+ * arrives. Interim results (no `is_final`) are only logged. It does not wait for `speech_final`: in a noisy room that
+ * silence can be 20 s away, and a question has to be heard within the wake window.
  */
-class UtteranceAssembler {
-    private val parts = mutableListOf<String>()
-
-    /** Returns the finished utterance when [message] ends one, otherwise null. */
-    fun accept(message: DeepgramMessage): String? {
-        if (message.type == "UtteranceEnd") return flush()
-        if (message.type != null && message.type != "Results") return null
-        if (message.isFinal && message.transcript.isNotBlank()) parts += message.transcript.trim()
-        return if (message.speechFinal) flush() else null
-    }
-
-    private fun flush(): String? {
-        if (parts.isEmpty()) return null
-        return parts.joinToString(" ").also { parts.clear() }
-    }
-}
-
-/** Streams microphone audio to Deepgram over one WebSocket session and reports each finished utterance. */
 class DeepgramClient(private val http: HttpClient, private val config: DeepgramConfig) {
 
     private val logger = KotlinLogging.logger {}
@@ -72,7 +54,7 @@ class DeepgramClient(private val http: HttpClient, private val config: DeepgramC
         parameters.append("channels", "1")
         parameters.append("smart_format", "true")
         parameters.append("punctuate", "true")
-        parameters.append("interim_results", "false")
+        parameters.append("interim_results", "true")
         parameters.append("endpointing", config.endpointingMs.toString())
         config.keyterms.forEach { parameters.append("keyterm", it) }
     }.buildString()
@@ -81,7 +63,6 @@ class DeepgramClient(private val http: HttpClient, private val config: DeepgramC
     suspend fun stream(audio: Flow<ByteArray>, onUtterance: suspend (String) -> Unit) {
         http.webSocket(url(), request = { header(HttpHeaders.Authorization, "Token ${config.apiKey}") }) {
             logger.info { "connected to Deepgram" }
-            val assembler = UtteranceAssembler()
 
             val sender = launch {
                 audio.collect { send(Frame.Binary(true, it)) }
@@ -103,9 +84,13 @@ class DeepgramClient(private val http: HttpClient, private val config: DeepgramC
                         logger.warn(e) { "unreadable Deepgram message" }
                         continue
                     }
-                    assembler.accept(message)?.let {
-                        logger.debug { "[transcript] $it" }
-                        onUtterance(it)
+                    if (!message.isFinal && message.transcript.isNotBlank()) {
+                        logger.debug { "[interim] ${message.transcript}" }
+                    }
+                    if (message.isFinal && message.transcript.isNotBlank()) {
+                        val text = message.transcript.trim()
+                        logger.debug { "[transcript] $text" }
+                        onUtterance(text)
                     }
                 }
             } finally {

@@ -6,6 +6,8 @@ ktor:
     port: 8080
 
 ouija:
+  # mic (Deepgram) or stdin (type the lines yourself); from the command line: -P:ouija.input=stdin
+  input: ${?OUIJA_INPUT}
   deepgram:
     # supplied through the environment, never written here; see backend/.env.example
     api-key: ${?DEEPGRAM_API_KEY}
@@ -22,3 +24,8 @@ ouija:
     base-url: ${?NANO_URL}
     # estimated time the bot needs per spelled letter, until the Nano can report that it is done
     seconds-per-letter: 6
+  llm:
+    # supplied through the environment; see backend/.env.example
+    api-key: ${?ANTHROPIC_API_KEY}
+    model: claude-haiku-5-5
+    base-url: https://api.anthropic.com

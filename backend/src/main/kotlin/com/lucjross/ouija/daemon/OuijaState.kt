@@ -28,13 +28,14 @@ data class OuijaTimings(
  * the answer goes to the bot, which is then busy until it has had time to spell it. Everything heard while the bot is
  * busy is ignored, and each answer uses up the wake word, so a follow-up needs a new "Hey, Ouija".
  *
- * [heard] takes whole utterances (punctuated, settled text), not interim results.
+ * [heard] takes final pieces of text (punctuated, settled), not interim results. A question can arrive in several
+ * pieces, so the text since the wake word is joined up here.
  */
 class OuijaState(
     private val bot: Bot,
     private val scope: CoroutineScope,
     private val now: () -> Long = System::currentTimeMillis,
-    private val answerFor: (String) -> String? = { question ->
+    private val answerFor: suspend (String) -> String? = { question ->
         QuestionTypeNode.match(question).random().answer.invoke()
     },
     private val timings: OuijaTimings = OuijaTimings()

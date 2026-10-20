@@ -40,6 +40,11 @@ dependencies {
     testImplementation(libs.ktor.client.mock)
 }
 
+// lets ./gradlew run --console=plain read typed lines when started with -P:ouija.input=stdin
+tasks.named<JavaExec>("run") {
+    standardInput = System.`in`
+}
+
 tasks.test {
     useJUnitPlatform()
 }

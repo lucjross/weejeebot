@@ -12,11 +12,21 @@ data class DeepgramConfig(
 
 data class BotConfig(val baseUrl: String, val secondsPerLetter: Int)
 
-data class AppConfig(val deepgram: DeepgramConfig, val bot: BotConfig) {
+data class LlmConfig(val apiKey: String, val model: String, val baseUrl: String)
+
+/** Where the questions come from: the microphone through Deepgram, or lines typed on stdin. */
+enum class InputMode { MIC, STDIN }
+
+data class AppConfig(val input: InputMode, val deepgram: DeepgramConfig, val bot: BotConfig, val llm: LlmConfig) {
     companion object {
         const val DEFAULT_NANO_URL = "http://192.168.68.106"
 
         fun from(config: ApplicationConfig) = AppConfig(
+            input = when (val mode = config.propertyOrNull("ouija.input")?.getString()?.lowercase()) {
+                null, "", "mic" -> InputMode.MIC
+                "stdin" -> InputMode.STDIN
+                else -> error("ouija.input must be mic or stdin, not \"$mode\"")
+            },
             deepgram = DeepgramConfig(
                 apiKey = config.propertyOrNull("ouija.deepgram.api-key")?.getString().orEmpty(),
                 model = config.property("ouija.deepgram.model").getString(),
@@ -28,6 +38,11 @@ data class AppConfig(val deepgram: DeepgramConfig, val bot: BotConfig) {
                 baseUrl = config.propertyOrNull("ouija.bot.base-url")?.getString()?.takeIf { it.isNotBlank() }
                     ?: DEFAULT_NANO_URL,
                 secondsPerLetter = config.property("ouija.bot.seconds-per-letter").getString().toInt()
+            ),
+            llm = LlmConfig(
+                apiKey = config.propertyOrNull("ouija.llm.api-key")?.getString().orEmpty(),
+                model = config.property("ouija.llm.model").getString(),
+                baseUrl = config.property("ouija.llm.base-url").getString()
             )
         )
     }
